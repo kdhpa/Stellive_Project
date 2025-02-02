@@ -1,26 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Tilemaps;
 
 public class MapLoder : MonoBehaviour
 {
-	private string sheetData;
-	//export?format=tsv&range=A1:AH13
-	public string webAppUrl = "https://script.google.com/macros/s/AKfycbwrIbE8EISHPmZCxsctEQWGdwheVzWDtQh1-VO7eNyPsCo5QWDS-U3ZSyRah20tHcT-6A/exec";
-	public string tileMapPath = "Assets/Resources/TileMap/TestMap";
+	public static string map_file_path = "Resources/MapData";
+	public static string map_file_name = "map_data.txt";
+	public static string webAppUrl = "https://script.google.com/macros/s/AKfycbwrIbE8EISHPmZCxsctEQWGdwheVzWDtQh1-VO7eNyPsCo5QWDS-U3ZSyRah20tHcT-6A/exec";
 
+	public string tileMapPath = "Resources/TileMap/TestMap";
 
-	public SheetDataWrapper data;
 	public Tilemap tile_maps;
 
-	private void Start()
-	{
-		StartCoroutine(Load());
-	}
-
-	public IEnumerator Load()
+	public static IEnumerator DataLoad()
 	{
 		UnityWebRequest request = UnityWebRequest.Get(webAppUrl);
 		yield return request.SendWebRequest();
@@ -28,20 +24,15 @@ public class MapLoder : MonoBehaviour
 		if (request.result == UnityWebRequest.Result.Success)
 		{
 			string jsonResponse = request.downloadHandler.text;
-			Debug.Log("Sheet Data: " + jsonResponse);
+			string path = Path.Combine(Application.dataPath, map_file_path);
+			string full_path = Path.Combine(path, map_file_name);
 
-			// JSON 데이터를 파싱
-			data = JsonUtility.FromJson<SheetDataWrapper>(jsonResponse);
-
-			// 데이터 확인 (예제)
-			foreach (var sheet in data.sheets)
+			if (!Directory.Exists(path))
 			{
-				Debug.Log($"Sheet Name: {sheet.Key}");
-				foreach (var row in sheet.Value)
-				{
-					Debug.Log(string.Join(", ", row));
-				}
+				Directory.CreateDirectory(path);
 			}
+
+			File.WriteAllText(full_path, jsonResponse);
 		}
 		else
 		{
@@ -50,16 +41,46 @@ public class MapLoder : MonoBehaviour
 
 	}
 
+	//async 공부 중
+	//public static async Task _DataLoad()
+	//{
+	//	using (HttpClient client = new HttpClient())
+	//	{
+	//		HttpResponseMessage response = await client.GetAsync(webAppUrl);
+	//		response.EnsureSuccessStatusCode(); // 오류 발생 시 예외 처리
+
+	//		string responseBody = await response.Content.ReadAsStringAsync();
+	//		Console.WriteLine("응답 데이터:\n" + responseBody);
+
+	//		string path = Path.Combine(Application.dataPath, map_file_path);
+	//		string full_path = Path.Combine(path, map_file_name);
+
+	//		if (!Directory.Exists(map_file_path))
+	//			Directory.CreateDirectory(map_file_path);
+
+	//		File.WriteAllText(full_path, responseBody);
+	//	}
+	//}
+
 	public void TranslateMapData()
 	{
-		string[] line = sheetData.Split("\n");
-		print(line);
+		List<SheetData> data;
+		string txt = string.Empty;
+		txt = File.ReadAllText(map_file_path);
+		data = JsonUtility.FromJson<List<SheetData>>(txt);
 	}
 }
 
 [System.Serializable]
 public class SheetDataWrapper
 {
-	public Dictionary<string, List<string[]>> sheets = new Dictionary<string, List<string[]>>();
+	public List<SheetData> sheets;
+}
+
+[System.Serializable]
+public class SheetData
+{
+	public string name;
+	public List<List<string>> data;
 }
 
