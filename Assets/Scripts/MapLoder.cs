@@ -62,12 +62,13 @@ public class MapLoder : MonoBehaviour
 	//	}
 	//}
 
-	public void TranslateMapData()
+	public SheetData TranslateMapData(int stage)
 	{
 		List<SheetData> data;
-		string txt = string.Empty;
-		txt = File.ReadAllText(map_file_path);
+		string txt = File.ReadAllText(map_file_path);
 		data = JsonUtility.FromJson<List<SheetData>>(txt);
+
+		return data[stage];
 	}
 }
 
